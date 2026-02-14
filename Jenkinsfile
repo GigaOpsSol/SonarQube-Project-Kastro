@@ -11,7 +11,7 @@ pipeline {
         SCANNER_HOME = tool 'sonar-scanner'
         DOCKERHUB_USERNAME = 'gigaops'  // Set this directly to your Docker Hub username
         DOCKER_IMAGE = "${DOCKERHUB_USERNAME}/spotify-app:latest"
-        TARGET_VM = "root@192.168.82.111"
+        TARGET_VM = "root@192.168.82.79"
     }
 
     stages {
