@@ -11,6 +11,7 @@ pipeline {
         SCANNER_HOME = tool 'sonar-scanner'
         DOCKERHUB_USERNAME = 'gigaops'  // Set this directly to your Docker Hub username
         DOCKER_IMAGE = "${DOCKERHUB_USERNAME}/spotify-app:latest"
+        TARGET_VM = "root@192.168.82.111"
     }
 
     stages {
@@ -68,14 +69,17 @@ pipeline {
             }
         }
 
-        stage('Run Docker Container') {
+        stage('Deploy to On-Prem VM') {
             steps {
-                script {
-                    // Stop any existing container with the same name
-                    sh "docker stop spotify-app || true && docker rm spotify-app || true"
-                    
-                    // Running the container
-                    sh "docker run -d --name spotify-app -p 5555:5555 $DOCKER_IMAGE"
+                sshagent(['deploy-vm-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no $TARGET_VM '
+                            docker pull $DOCKER_IMAGE &&
+                            docker stop spotify-app || true &&
+                            docker rm spotify-app || true &&
+                            docker run -d --name spotify-app -p 5555:5555 $DOCKER_IMAGE
+                        '
+                    """
                 }
             }
         }
@@ -84,8 +88,7 @@ pipeline {
     post {
         always {
             echo 'Cleaning up workspace...'
-            cleanWs()  // Clean up the workspace after the build
+            cleanWs()
         }
     }
 }
-
